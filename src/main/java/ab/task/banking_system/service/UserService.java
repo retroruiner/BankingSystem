@@ -16,18 +16,18 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private final UserRepository userRepo;
+    private final UserRepository userRepository;
 
     @Transactional
     public User create(String name, String email) {
-        if (userRepo.existsByEmail(email)) {
+        if (userRepository.existsByEmail(email)) {
             throw new ResponseStatusException(CONFLICT, "Email already exists");
         }
         User user = new User();
         user.setName(name);
         user.setEmail(email);
         try {
-            return userRepo.save(user);
+            return userRepository.save(user);
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(CONFLICT, "Email already exists");
         }
@@ -35,12 +35,12 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public User getById(Long id) {
-        return userRepo.findById(id)
+        return userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 
     @Transactional(readOnly = true)
     public List<User> listAll() {
-        return userRepo.findAll();
+        return userRepository.findAll();
     }
 }
