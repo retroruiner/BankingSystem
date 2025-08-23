@@ -1,4 +1,4 @@
-package ab.task.banking_system;
+package ab.task.banking_system.models;
 
 import jakarta.persistence.*;
 import lombok.Getter;
