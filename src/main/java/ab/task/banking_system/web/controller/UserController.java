@@ -1,8 +1,11 @@
 package ab.task.banking_system.web;
 
+import ab.task.banking_system.service.AccountService;
 import ab.task.banking_system.service.UserService;
+import ab.task.banking_system.web.dto.AccountResponse;
 import ab.task.banking_system.web.dto.UserCreateRequest;
 import ab.task.banking_system.web.dto.UserResponse;
+import ab.task.banking_system.web.mapper.AccountMapper;
 import ab.task.banking_system.web.mapper.UserMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +21,8 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final UserMapper userMapper;
+    private final AccountService accountService;
+    private final AccountMapper accountMapper;
 
     @PostMapping
     public ResponseEntity<UserResponse> create(@Valid @RequestBody UserCreateRequest req) {
@@ -33,5 +38,10 @@ public class UserController {
     @GetMapping
     public List<UserResponse> list() {
         return userMapper.toResponse(userService.listAll());
+    }
+
+    @GetMapping("/{id}/accounts")
+    public List<AccountResponse> userAccounts(@PathVariable Long id) {
+        return accountMapper.toResponse(accountService.listByUser(id));
     }
 }

@@ -10,6 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -40,5 +43,43 @@ public class AccountService {
 
     private String generateAccountNumber() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    @Transactional(readOnly = true)
+    public List<Account> listByUser(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+        return accountRepository.findByUserId(userId);
+    }
+
+    @Transactional
+    public void deposit(Long accountId, BigDecimal amount) {
+        requirePositive(amount);
+        int rows = accountRepository.deposit(accountId, amount);
+        if (rows == 0) {
+            if (!accountRepository.existsById(accountId)) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found");
+            }
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Deposit failed");
+        }
+    }
+
+    @Transactional
+    public void withdraw(Long accountId, BigDecimal amount) {
+        requirePositive(amount);
+        int rows = accountRepository.withdrawIfEnough(accountId, amount);
+        if (rows == 0) {
+            if (!accountRepository.existsById(accountId)) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found");
+            }
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Insufficient funds");
+        }
+    }
+
+    private static void requirePositive(BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount must be > 0");
+        }
     }
 }
