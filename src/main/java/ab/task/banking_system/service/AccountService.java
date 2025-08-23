@@ -5,6 +5,7 @@ import ab.task.banking_system.model.User;
 import ab.task.banking_system.repository.AccountRepository;
 import ab.task.banking_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AccountService {
@@ -23,8 +25,13 @@ public class AccountService {
 
     @Transactional
     public Account create(Long userId, String providedNumber) {
+        log.info("Создание счёта: userId={}, providedNumber={}", userId, providedNumber != null && !providedNumber.isBlank());
+
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> {
+                    log.warn("Создание счёта: пользователь не найден userId={}", userId);
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+                });
 
         String number = (providedNumber != null && !providedNumber.isBlank())
                 ? providedNumber
@@ -35,50 +42,69 @@ public class AccountService {
         acc.setNumber(number);
 
         try {
-            return accountRepository.save(acc);
+            Account saved = accountRepository.save(acc);
+            log.info("Счёт создан: id={}, number={}, userId={}", saved.getId(), saved.getNumber(), userId);
+            return saved;
         } catch (DataIntegrityViolationException e) {
+            var cause = e.getMostSpecificCause();
+            log.warn("Создание счёта: номер уже существует number={}, cause={}", number, cause.getMessage());
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Account number already exists");
         }
     }
 
     private String generateAccountNumber() {
-        return UUID.randomUUID().toString().replace("-", "");
+        String n = UUID.randomUUID().toString().replace("-", "");
+        log.debug("Сгенерирован номер счёта: {}", n);
+        return n;
     }
 
     @Transactional(readOnly = true)
     public List<Account> listByUser(Long userId) {
+        log.info("Запрос счетов пользователя: userId={}", userId);
         if (!userRepository.existsById(userId)) {
+            log.warn("Счета пользователя: пользователь не найден userId={}", userId);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
-        return accountRepository.findByUserId(userId);
+        List<Account> list = accountRepository.findByUserId(userId);
+        log.info("Счета пользователя: userId={}, count={}", userId, list.size());
+        return list;
     }
 
     @Transactional
     public void deposit(Long accountId, BigDecimal amount) {
+        log.info("Депозит: accountId={}, amount={}", accountId, amount);
         requirePositive(amount);
         int rows = accountRepository.deposit(accountId, amount);
         if (rows == 0) {
             if (!accountRepository.existsById(accountId)) {
+                log.warn("Депозит: счёт не найден accountId={}", accountId);
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found");
             }
+            log.warn("Депозит не выполнен (неизвестная причина): accountId={}, amount={}", accountId, amount);
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Deposit failed");
         }
+        log.info("Депозит выполнен: accountId={}, amount={}", accountId, amount);
     }
 
     @Transactional
     public void withdraw(Long accountId, BigDecimal amount) {
+        log.info("Списание: accountId={}, amount={}", accountId, amount);
         requirePositive(amount);
         int rows = accountRepository.withdrawIfEnough(accountId, amount);
         if (rows == 0) {
             if (!accountRepository.existsById(accountId)) {
+                log.warn("Списание: счёт не найден accountId={}", accountId);
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found");
             }
+            log.warn("Списание отклонено: недостаточно средств accountId={}, amount={}", accountId, amount);
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Insufficient funds");
         }
+        log.info("Списание выполнено: accountId={}, amount={}", accountId, amount);
     }
 
-    private static void requirePositive(BigDecimal amount) {
+    private void requirePositive(BigDecimal amount) {
         if (amount == null || amount.signum() <= 0) {
+            log.warn("Некорректная сумма операции: {}", amount);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount must be > 0");
         }
     }
