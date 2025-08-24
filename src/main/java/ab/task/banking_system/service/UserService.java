@@ -20,6 +20,14 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 public class UserService {
     private final UserRepository userRepository;
 
+    /**
+     * Создаёт нового пользователя.
+     *
+     * @param name  имя пользователя
+     * @param email e-mail пользователя
+     * @return сохранённый пользователь
+     * @throws ResponseStatusException при конфликте уникальности e-mail (409)
+     */
     @Transactional
     public User create(String name, String email) {
         log.info("Создаю пользователя: name={}, email={}", name, email);
@@ -43,6 +51,13 @@ public class UserService {
         }
     }
 
+    /**
+     * Возвращает пользователя по идентификатору.
+     *
+     * @param id идентификатор пользователя
+     * @return найденный пользователь
+     * @throws ResponseStatusException если пользователь не найден (404)
+     */
     @Transactional(readOnly = true)
     public User getById(Long id) {
         log.info("Читаю пользователя: id={}", id);
@@ -57,6 +72,11 @@ public class UserService {
                 });
     }
 
+    /**
+     * Возвращает всех пользователей.
+     *
+     * @return список всех пользователей
+     */
     @Transactional(readOnly = true)
     public List<User> listAll() {
         log.info("Получаю список пользователей");
