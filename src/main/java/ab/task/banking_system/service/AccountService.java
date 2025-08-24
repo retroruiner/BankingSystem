@@ -23,6 +23,14 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Создаёт новый счёт для пользователя.
+     *
+     * @param userId идентификатор пользователя
+     * @param providedNumber номер счёта, если задан; если пустой - будет сгенерирован
+     * @return сохранённый счёт
+     * @throws ResponseStatusException если пользователь не найден (404) или номер счёта уже существует (409)
+     */
     @Transactional
     public Account create(Long userId, String providedNumber) {
         log.info("Создание счёта: userId={}, providedNumber={}", userId, providedNumber != null && !providedNumber.isBlank());
@@ -46,7 +54,7 @@ public class AccountService {
             log.info("Счёт создан: id={}, number={}, userId={}", saved.getId(), saved.getNumber(), userId);
             return saved;
         } catch (DataIntegrityViolationException e) {
-            var cause = e.getMostSpecificCause();
+            Throwable cause = e.getMostSpecificCause();
             log.warn("Создание счёта: номер уже существует number={}, cause={}", number, cause.getMessage());
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Account number already exists");
         }
@@ -58,6 +66,13 @@ public class AccountService {
         return n;
     }
 
+    /**
+     * Возвращает список счетов пользователя.
+     *
+     * @param userId идентификатор пользователя
+     * @return список счетов пользователя
+     * @throws ResponseStatusException если пользователь не найден (404)
+     */
     @Transactional(readOnly = true)
     public List<Account> listByUser(Long userId) {
         log.info("Запрос счетов пользователя: userId={}", userId);
@@ -70,6 +85,13 @@ public class AccountService {
         return list;
     }
 
+    /**
+     * Выполняет пополнение счёта.
+     *
+     * @param accountId идентификатор счёта
+     * @param amount сумма пополнения (должна быть > 0)
+     * @throws ResponseStatusException если сумма некорректна (400), счёт не найден (404) или пополнение не применено (409)
+     */
     @Transactional
     public void deposit(Long accountId, BigDecimal amount) {
         log.info("Депозит: accountId={}, amount={}", accountId, amount);
@@ -86,6 +108,13 @@ public class AccountService {
         log.info("Депозит выполнен: accountId={}, amount={}", accountId, amount);
     }
 
+    /**
+     * Выполняет списание со счёта.
+     *
+     * @param accountId идентификатор счёта
+     * @param amount сумма списания (должна быть > 0)
+     * @throws ResponseStatusException если сумма некорректна (400), счёт не найден (404) или недостаточно средств (409)
+     */
     @Transactional
     public void withdraw(Long accountId, BigDecimal amount) {
         log.info("Списание: accountId={}, amount={}", accountId, amount);
