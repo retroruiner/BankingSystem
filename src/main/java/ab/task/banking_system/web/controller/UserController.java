@@ -1,4 +1,4 @@
-package ab.task.banking_system.web;
+package ab.task.banking_system.web.controller;
 
 import ab.task.banking_system.service.AccountService;
 import ab.task.banking_system.service.UserService;
