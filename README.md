@@ -14,7 +14,7 @@ Spring Boot + PostgreSQL, миграции Flyway, OpenAPI (Swagger).
 Файлы расположения:
 
 * `./Dockerfile`
-* `./docker-compose.yml`
+* `./docker-compose.yaml`
 * `./src/main/resources/application.properties`
 
 ### 1) Запуск
@@ -39,7 +39,7 @@ docker compose logs -f app
 
 ### Переменные окружения (Compose)
 
-В контейнере используются значения из `application.properties`, но для подключения к БД **хост должен быть `db`**, поэтому в `docker-compose.yml` заданы:
+В контейнере используются значения из `application.properties`, но для подключения к БД **хост должен быть `db`**, поэтому в `docker-compose.yaml` заданы:
 
 ```
 DB_URL=jdbc:postgresql://db:5432/bank
