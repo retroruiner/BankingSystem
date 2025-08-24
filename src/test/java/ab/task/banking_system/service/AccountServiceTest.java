@@ -24,10 +24,13 @@ import static org.springframework.http.HttpStatus.*;
 @ExtendWith(MockitoExtension.class)
 class AccountServiceTest {
 
-    @Mock AccountRepository accountRepository;
-    @Mock UserRepository userRepository;
+    @Mock
+    AccountRepository accountRepository;
+    @Mock
+    UserRepository userRepository;
 
-    @InjectMocks AccountService accountService;
+    @InjectMocks
+    AccountService accountService;
 
     User user;
 
